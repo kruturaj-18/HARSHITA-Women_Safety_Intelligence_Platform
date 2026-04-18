@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: wsip-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: wsip-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/women-safety-platform
+      - JWT_SECRET=${JWT_SECRET:-wsip-production-secret-change-me}
+      - JWT_EXPIRES_IN=24h
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6}
+      - FRONTEND_URL=http://localhost:5173
+      - NODE_ENV=production
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: wsip-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
